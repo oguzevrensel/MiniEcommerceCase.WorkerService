@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using MiniEcommerceCase.WorkerService.Events;
+using MiniEcommerceCase.WorkerService.Interfaces;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -10,10 +11,12 @@ namespace MiniEcommerceCase.WorkerService.Services
     public class RabbitMqListener
     {
         private readonly IConfiguration _configuration;
+        private readonly IRedisLogger _redisLogger;
 
-        public RabbitMqListener(IConfiguration configuration)
+        public RabbitMqListener(IConfiguration configuration, IRedisLogger redisLogger)
         {
             _configuration = configuration;
+            _redisLogger = redisLogger;
         }
 
         public void StartListening()
@@ -49,7 +52,10 @@ namespace MiniEcommerceCase.WorkerService.Services
                 Console.WriteLine($"    Quantity: {orderEvent?.Quantity}");
                 Console.WriteLine($"    PaymentMethod: {orderEvent?.PaymentMethod}");
 
-                await Task.Delay(2000); 
+                await Task.Delay(2000);
+
+                await _redisLogger.LogProcessedAsync(orderEvent.OrderId); 
+
 
                 Console.WriteLine($"[✔] Order processed at {DateTime.UtcNow:HH:mm:ss}");
             };
